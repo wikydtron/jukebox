@@ -2,7 +2,10 @@
 
 A retro-futuristic, cyberpunk-styled Spotify web player designed to run inside Home Assistant as a dashboard — or standalone in any browser.
 
-![Jukebox](https://img.shields.io/badge/Spotify-Jukebox-ff2d95?style=for-the-badge&logo=spotify)
+![Spotify](https://img.shields.io/badge/Spotify-Jukebox-1DB954?style=for-the-badge&logo=spotify&logoColor=white)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Ready-41BDF5?style=for-the-badge&logo=homeassistant&logoColor=white)
+![JavaScript](https://img.shields.io/badge/Pure-JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-ff2d95?style=for-the-badge)
 
 ## ✨ Features
 
