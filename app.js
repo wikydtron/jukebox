@@ -4,9 +4,21 @@
 
 // === CONFIG ===
 const CONFIG = {
-  clientId: 'YOUR_SPOTIFY_CLIENT_ID',
-  clientSecret: 'YOUR_SPOTIFY_CLIENT_SECRET',
-  redirectUri: 'YOUR_REDIRECT_URI',
+  clientId: 'fef0ec2f86cd440db5484c694ecd8fba',
+  clientSecret: 'f62881a6719c4e48a47d7f07dfda6609',
+  redirectUri: 'http://192.168.2.104:8123/local/jukebox/index.html',
+  haUrl: 'http://192.168.2.104:8123',
+  haToken: '',
+  haSpotifyEntity: 'media_player.spotifyplus_YOUR_USERNAME',
+  homeSpeakers: [
+    { label: 'All',      icon: '🏠', entityId: 'media_player.all_speakers' },
+    { label: 'Bedroom',  icon: '🛏', entityId: 'media_player.bedroom_speaker' },
+    { label: 'Sonos',    icon: '🎵', entityId: 'media_player.basement' },
+    { label: 'Basement', icon: '🔊', entityId: 'media_player.basement_speaker' },
+    { label: 'Garage',   icon: '🚗', entityId: 'media_player.garage_speaker' },
+    { label: 'Bathroom', icon: '🚿', entityId: 'media_player.bathroom_speaker' },
+    { label: 'Kitchen',  icon: '🍳', entityId: 'media_player.kitchen_display' },
+  ],
   scopes: [
     'user-read-playback-state',
     'user-modify-playback-state',
@@ -33,7 +45,8 @@ let state = {
   nowPlaying: null,
   pollInterval: null,
   searchTimeout: null,
-  cachedViews: {}
+  cachedViews: {},
+  pendingPlay: null
 };
 
 // === SPOTIFY AUTH (Authorization Code + Client Secret) ===
@@ -148,6 +161,33 @@ async function api(endpoint, method = 'GET', body = null) {
 
 // === PLAYBACK HELPERS ===
 async function play(uri, context_uri = null, offset = null) {
+  // If no active device, queue the play and prompt for speaker
+  if (!state.activeDevice) {
+    state.pendingPlay = { uri, context_uri, offset };
+    await showSpeakerPicker();
+    return;
+  }
+  const body = {};
+  if (context_uri) {
+    body.context_uri = context_uri;
+    if (offset !== null) body.offset = { position: offset };
+  } else if (uri) {
+    body.uris = [uri];
+  }
+  const result = await api('/me/player/play', 'PUT', body);
+  // 404 = no active device despite state thinking there was one — clear and re-prompt
+  if (result === null && !state.activeDevice) {
+    state.pendingPlay = { uri, context_uri, offset };
+    await showSpeakerPicker();
+    return;
+  }
+  setTimeout(pollNowPlaying, 500);
+}
+
+async function executePendingPlay() {
+  if (!state.pendingPlay) return;
+  const { uri, context_uri, offset } = state.pendingPlay;
+  state.pendingPlay = null;
   const body = {};
   if (context_uri) {
     body.context_uri = context_uri;
@@ -156,12 +196,12 @@ async function play(uri, context_uri = null, offset = null) {
     body.uris = [uri];
   }
   await api('/me/player/play', 'PUT', body);
-  setTimeout(pollNowPlaying, 500);
+  setTimeout(pollNowPlaying, 800);
 }
 
 async function pause() { await api('/me/player/pause', 'PUT'); pollNowPlaying(); }
-async function next() { await api('/me/player/next', 'POST'); setTimeout(pollNowPlaying, 500); }
-async function prev() { await api('/me/player/previous', 'POST'); setTimeout(pollNowPlaying, 500); }
+async function next() { await api('/me/player/next', 'POST'); setTimeout(pollNowPlaying, 600); }
+async function prev() { await api('/me/player/previous', 'POST'); setTimeout(pollNowPlaying, 600); }
 
 async function toggleShuffle() {
   if (!state.nowPlaying) return;
@@ -179,8 +219,15 @@ async function toggleRepeat() {
   setTimeout(pollNowPlaying, 300);
 }
 
-async function setVolume(vol) {
-  await api('/me/player/volume?volume_percent=' + Math.round(vol), 'PUT');
+let volumeDebounceTimer = null;
+
+function setVolume(vol) {
+  const v = Math.round(Number(vol));
+  // Debounce — send API only 250ms after dragging stops (avoid hammering Spotify)
+  clearTimeout(volumeDebounceTimer);
+  volumeDebounceTimer = setTimeout(() => {
+    api('/me/player/volume?volume_percent=' + v, 'PUT');
+  }, 250);
 }
 
 async function seekTo(posMs) {
@@ -189,8 +236,10 @@ async function seekTo(posMs) {
 
 async function transferPlayback(deviceId) {
   await api('/me/player', 'PUT', { device_ids: [deviceId], play: true });
-  setTimeout(pollNowPlaying, 1000);
   hideDevices();
+  await new Promise(r => setTimeout(r, 1000));
+  await pollNowPlaying();
+  if (state.pendingPlay) await executePendingPlay();
 }
 
 // === NOW PLAYING POLL ===
@@ -223,14 +272,165 @@ function updateNowPlaying(data) {
   }
 }
 
+// === HA SETTINGS ===
+function getHaConfig() {
+  return {
+    url: localStorage.getItem('jukebox_ha_url') || '',
+    token: localStorage.getItem('jukebox_ha_token') || '',
+    entity: localStorage.getItem('jukebox_ha_entity') || ''
+  };
+}
+
+function openSettings() {
+  const cfg = getHaConfig();
+  document.getElementById('ha-url-input').value = cfg.url;
+  document.getElementById('ha-token-input').value = cfg.token;
+  document.getElementById('ha-entity-input').value = cfg.entity;
+  document.getElementById('settings-status').textContent = '';
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.add('hidden');
+}
+
+function saveSettings() {
+  const url = document.getElementById('ha-url-input').value.trim().replace(/\/$/, '');
+  const token = document.getElementById('ha-token-input').value.trim();
+  const entity = document.getElementById('ha-entity-input').value.trim();
+  if (url) localStorage.setItem('jukebox_ha_url', url);
+  else localStorage.removeItem('jukebox_ha_url');
+  if (token) localStorage.setItem('jukebox_ha_token', token);
+  else localStorage.removeItem('jukebox_ha_token');
+  if (entity) localStorage.setItem('jukebox_ha_entity', entity);
+  else localStorage.removeItem('jukebox_ha_entity');
+  document.getElementById('settings-status').textContent = '✓ Saved';
+  setTimeout(closeSettings, 800);
+}
+
+function clearSettings() {
+  localStorage.removeItem('jukebox_ha_url');
+  localStorage.removeItem('jukebox_ha_token');
+  localStorage.removeItem('jukebox_ha_entity');
+  document.getElementById('ha-url-input').value = '';
+  document.getElementById('ha-token-input').value = '';
+  document.getElementById('ha-entity-input').value = '';
+  document.getElementById('settings-status').textContent = '✓ Cleared';
+}
+
+// === HA SPEAKER PICKER ===
+async function showSpeakerPicker() {
+  const cfg = getHaConfig();
+  const speakers = CONFIG.homeSpeakers || [];
+  if ((!cfg.url || !cfg.token) && speakers.length === 0) {
+    showDevices();
+    return;
+  }
+  // Build speaker list from CONFIG.homeSpeakers (entity-based, works for Cast + Sonos)
+  const activeName = document.getElementById('speaker-name')?.textContent || '';
+  const list = document.getElementById('ha-speaker-list');
+  if (speakers.length > 0) {
+    list.innerHTML = speakers.map(s => {
+      const isActive = activeName === s.label;
+      return `
+        <div class="device-item ${isActive ? 'active' : ''}" onclick="selectHaSpeaker('${s.label.replace(/'/g,"\\'")}', '${s.entityId}')">
+          <span style="font-size:18px;flex-shrink:0">${s.icon}</span>
+          <div>
+            <div class="device-name">${s.label}</div>
+            ${isActive ? '<div class="device-type" style="color:var(--cyan)">Active</div>' : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('ha-speaker-modal').classList.remove('hidden');
+  } else {
+    showDevices();
+  }
+}
+
+async function selectHaSpeaker(label, entityId) {
+  const cfg = getHaConfig();
+  closeHaSpeakers();
+  const spkEl = document.getElementById('speaker-name');
+  if (spkEl) spkEl.textContent = label;
+
+  // Determine what to play
+  const pending = state.pendingPlay;
+  const nowPlaying = state.nowPlaying;
+  let mediaContentId = null;
+  let mediaContentType = 'music';
+
+  if (pending?.uri) {
+    mediaContentId = pending.uri;
+  } else if (pending?.context_uri) {
+    mediaContentId = pending.context_uri;
+    mediaContentType = pending.context_uri.includes(':playlist:') ? 'playlist' : 'music';
+  } else if (nowPlaying?.item?.uri) {
+    mediaContentId = nowPlaying.item.uri;
+  } else if (nowPlaying?.context?.uri) {
+    mediaContentId = nowPlaying.context.uri;
+    mediaContentType = nowPlaying.context.type || 'music';
+  }
+
+  if (!mediaContentId) {
+    // Nothing playing — just transfer focus without media
+    console.log('No media to transfer, speaker set to', label);
+    return;
+  }
+
+  state.pendingPlay = null;
+  state.activeDevice = { name: label, id: entityId };
+
+  try {
+    const res = await fetch(`${cfg.url}/api/services/media_player/play_media`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${cfg.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        entity_id: entityId,
+        media_content_id: mediaContentId,
+        media_content_type: mediaContentType
+      })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('HA play_media error:', res.status, err);
+    }
+    await new Promise(r => setTimeout(r, 1500));
+    await pollNowPlaying();
+  } catch (e) {
+    console.error('HA play_media error:', e);
+  }
+}
+
+function closeHaSpeakers() {
+  document.getElementById('ha-speaker-modal').classList.add('hidden');
+}
+
 // === DEVICE PICKER ===
 async function showDevices() {
-  const data = await api('/me/player/devices');
-  if (!data || !data.devices) return;
-  state.devices = data.devices;
+  document.getElementById('device-modal').classList.remove('hidden');
 
+  // Render hardcoded home speakers
+  const currentSource = state.nowPlaying?.device?.name || '';
+  const homeEl = document.getElementById('home-speakers-list');
+  if (homeEl) {
+    homeEl.innerHTML = CONFIG.homeSpeakers.map(s => `
+      <div class="spk-chip ${currentSource === s.source ? 'active' : ''}" onclick="transferToHA('${s.source}')">
+        <span class="spk-icon">${s.icon}</span>${s.label}
+      </div>
+    `).join('');
+  }
+
+  // Load live Spotify devices
   const list = document.getElementById('device-list');
-  list.innerHTML = data.devices.map(d => `
+  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const data = await api('/me/player/devices');
+  if (!data || !data.devices) { list.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px">No devices found</div>'; return; }
+  state.devices = data.devices;
+  list.innerHTML = data.devices.length ? data.devices.map(d => `
     <div class="device-item ${d.is_active ? 'active' : ''}" onclick="transferPlayback('${d.id}')">
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
       <div>
@@ -238,9 +438,26 @@ async function showDevices() {
         <div class="device-type">${d.type}${d.is_active ? ' • Active' : ''}</div>
       </div>
     </div>
-  `).join('');
+  `).join('') : '<div style="color:var(--text3);font-size:12px;padding:8px">No active Spotify devices</div>';
+}
 
-  document.getElementById('device-modal').classList.remove('hidden');
+async function transferToHA(source) {
+  hideDevices();
+  const spkEl = document.getElementById('speaker-name');
+  if (spkEl) spkEl.textContent = source;
+  try {
+    await fetch(`${CONFIG.haUrl}/api/services/media_player/select_source`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${CONFIG.haToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ entity_id: CONFIG.haSpotifyEntity, source })
+    });
+    setTimeout(pollNowPlaying, 2000);
+  } catch (e) {
+    console.warn('HA speaker transfer failed:', e);
+  }
 }
 
 function hideDevices() {
@@ -689,7 +906,7 @@ function renderNowPlaying(container) {
 
         <div class="volume-bar">
           <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-          <input type="range" class="volume-slider" id="np-volume" min="0" max="100" value="${np.device?.volume_percent || 50}" oninput="setVolume(this.value); document.getElementById('np-vol-pct').textContent=this.value+'%'">
+          <input type="range" class="volume-slider" id="np-volume" min="0" max="100" value="${np.device?.volume_percent || 50}" oninput="document.getElementById('np-vol-pct').textContent=this.value+'%'; setVolume(this.value)">
           <span style="font-size:11px;color:var(--text3);min-width:28px" id="np-vol-pct">${np.device?.volume_percent || 50}%</span>
         </div>
 
@@ -705,11 +922,22 @@ function renderNowPlaying(container) {
   // Initial UI state
   updateNPVisuals();
 
-  // Fetch lyrics if new track
+  // Fetch lyrics — always re-render if we have them (DOM was just rebuilt), fetch if new track
   if (npCurrentTrackId !== t.id) {
     npCurrentTrackId = t.id;
     npSyncedLyrics = null;
+    lastHighlightIdx = -1;
     fetchLyrics(t.name, t.artists?.[0]?.name);
+  } else if (npSyncedLyrics) {
+    // Same track, DOM was rebuilt — re-inject lyrics without refetching
+    const el = document.getElementById('lyrics-content');
+    if (el) {
+      el.innerHTML = npSyncedLyrics.map((l, i) =>
+        `<div class="lyric-line" id="lyric-${i}" data-time="${l.time}" onclick="seekToLyric(${l.time})">${esc(l.text) || '<span class="lyric-instrumental">♪ ♪ ♪</span>'}</div>`
+      ).join('');
+      lastHighlightIdx = -1;
+      setTimeout(() => highlightCurrentLyric(npLocalProgress, true), 200);
+    }
   }
 
   // Start live update loop (every 500ms)
@@ -806,7 +1034,8 @@ updateNowPlaying = function(data) {
     // Update volume
     const volSlider = document.getElementById('np-volume');
     const volPct = document.getElementById('np-vol-pct');
-    if (volSlider && data.device && !volSlider.matches(':active')) {
+    // Only sync volume from API if not actively dragging AND not recently set by user
+    if (volSlider && data.device && !volSlider.matches(':active') && !volumeDebounceTimer) {
       volSlider.value = data.device.volume_percent;
       if (volPct) volPct.textContent = data.device.volume_percent + '%';
     }
@@ -822,32 +1051,32 @@ async function fetchLyrics(title, artist) {
 
   el.innerHTML = '<div class="lyrics-loading"><div class="spinner"></div></div>';
 
-  // Set a hard fallback — if nothing renders in 4 seconds, show "no lyrics"
+  // Hard fallback — show "no lyrics" only if STILL loading after 12s (accounts for slow first load)
   const fallbackTimer = setTimeout(() => {
     const el2 = document.getElementById('lyrics-content');
     if (el2 && el2.querySelector('.lyrics-loading')) {
       npSyncedLyrics = null;
       el2.innerHTML = '<div class="lyrics-empty">♪ No lyrics available</div>';
     }
-  }, 4000);
+  }, 12000);
 
   let data = null;
   
-  // Try exact match
+  // Try exact match — 6s timeout (lrclib cold start on first load)
   try {
     const resp = await Promise.race([
       fetch('https://lrclib.net/api/get?' + new URLSearchParams({ track_name: title || '', artist_name: artist || '' })),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000))
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
     ]);
     if (resp.ok) data = await resp.json();
   } catch(e) { }
   
-  // Fallback: search
+  // Fallback: search — 6s timeout
   if (!data || (!data.syncedLyrics && !data.plainLyrics)) {
     try {
       const resp = await Promise.race([
         fetch('https://lrclib.net/api/search?' + new URLSearchParams({ q: (title || '') + ' ' + (artist || '') })),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000))
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
       ]);
       if (resp.ok) {
         const results = await resp.json();
@@ -872,9 +1101,11 @@ async function fetchLyrics(title, artist) {
     el3.innerHTML = npSyncedLyrics.map((l, i) =>
       `<div class="lyric-line" id="lyric-${i}" data-time="${l.time}" onclick="seekToLyric(${l.time})">${esc(l.text) || '<span class="lyric-instrumental">♪ ♪ ♪</span>'}</div>`
     ).join('');
-    // Force instant scroll to current position
+    // Force instant scroll to current position — 300ms gives browser time to layout
     lastHighlightIdx = -1;
-    setTimeout(() => highlightCurrentLyric(npLocalProgress, true), 100);
+    setTimeout(() => highlightCurrentLyric(npLocalProgress, true), 300);
+    // Second attempt at 800ms in case first layout pass wasn't ready
+    setTimeout(() => { if (lastHighlightIdx >= 0) highlightCurrentLyric(npLocalProgress, true); }, 800);
   } else if (data && data.plainLyrics) {
     npSyncedLyrics = null;
     el3.innerHTML = data.plainLyrics.split('\n').map(l =>
@@ -921,12 +1152,12 @@ function highlightCurrentLyric(posMs, forceScroll) {
 
     if (i === activeIdx) {
       el.classList.add('active');
-      // Auto-scroll to active line
+      // Auto-scroll: center active line in the box
       if (box) {
-        const lineTop = el.offsetTop - box.offsetTop;
-        const boxHeight = box.clientHeight;
-        const scrollTarget = lineTop - boxHeight / 2 + 20;
-        box.scrollTo({ top: scrollTarget, behavior: forceScroll ? 'instant' : 'smooth' });
+        const elRect = el.getBoundingClientRect();
+        const boxRect = box.getBoundingClientRect();
+        const scrollTarget = box.scrollTop + (elRect.top - boxRect.top) - (boxRect.height / 2) + (elRect.height / 2);
+        box.scrollTo({ top: Math.max(0, scrollTarget), behavior: forceScroll ? 'instant' : 'smooth' });
       }
     } else if (Math.abs(dist) <= 2) {
       el.classList.add('near');
@@ -1173,9 +1404,7 @@ async function loadUserProfile() {
   const me = await api('/me');
   if (me && me.display_name) {
     const el = document.getElementById('sidebar-user');
-    if (el) el.textContent = me.display_name + "'s Jukebox";
-    const sub = document.querySelector('.sidebar-brand-sub');
-    if (sub) sub.textContent = me.display_name + "'s Jukebox";
+    if (el) el.textContent = me.display_name;
   }
 }
 
@@ -1202,7 +1431,7 @@ async function initApp() {
     '★ INSERT COIN TO PLAY ★',
     '♪ SELECT YOUR JAM ♪',
     '► PRESS PLAY — ROCK ON ►',
-    '★ FRANK\'S JUKEBOX ★',
+    '★ PLAY IT LOUD ★',
     '♪ DROP THE NEEDLE ♪',
     '► NOW SERVING BANGERS ►',
     '★ CHOOSE WISELY ★',
@@ -1225,7 +1454,7 @@ async function initApp() {
 
 // === BOOT ===
 // Hardcoded refresh token from SpotifyPlus — auto-refreshes, no browser auth needed
-const FALLBACK_REFRESH_TOKEN = 'YOUR_REFRESH_TOKEN_OR_EMPTY';
+const FALLBACK_REFRESH_TOKEN = 'AQDWcLY5JFVMZzSDc0RsJXSMMkFLF9iLq_rY2kXcBTZ5RQLTJ1dissPQQPo66NmT1txGSTG8uDZjJf3rXlrzok6tfB_AYc4bmcY7Lqxg0Fn9jxD7zolMHsWbFm1Bk20FtN0';
 
 (async function boot() {
   // Check for auth code callback (redirect from Spotify)

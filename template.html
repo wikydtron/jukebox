@@ -812,36 +812,20 @@ body {
   border-radius: 0;
   padding: 0;
   flex: 1;
-  min-height: 180px;
-  max-height: 320px;
+  min-height: 200px;
+  max-height: 420px;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
   scroll-behavior: smooth;
-  /* hide scrollbar */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* Fade top + bottom edges using mask — no black bar artifacts */
+  -webkit-mask-image: linear-gradient(transparent 0%, black 12%, black 85%, transparent 100%);
+  mask-image: linear-gradient(transparent 0%, black 12%, black 85%, transparent 100%);
 }
 .lyrics-box::-webkit-scrollbar { display: none; }
-/* Fade top + bottom edges — match app bg */
-.lyrics-box::before, .lyrics-box::after {
-  content: '';
-  position: sticky;
-  display: block;
-  height: 48px;
-  z-index: 2;
-  pointer-events: none;
-}
-.lyrics-box::before {
-  top: 0;
-  background: linear-gradient(rgba(10,6,16,1), transparent);
-  margin-bottom: -48px;
-}
-.lyrics-box::after {
-  bottom: 0;
-  background: linear-gradient(transparent, rgba(10,6,16,1));
-  margin-top: -48px;
-}
+.lyrics-box::before, .lyrics-box::after { display: none; }
 .lyrics-label {
   font-size: 8px; font-weight: 800; letter-spacing: 4px;
   text-transform: uppercase; color: var(--cyan); margin: 0;
