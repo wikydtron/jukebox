@@ -4,10 +4,10 @@
 
 // === CONFIG ===
 const CONFIG = {
-  clientId: 'fef0ec2f86cd440db5484c694ecd8fba',
-  clientSecret: 'f62881a6719c4e48a47d7f07dfda6609',
-  redirectUri: 'http://192.168.2.104:8123/local/jukebox/index.html',
-  haUrl: 'http://192.168.2.104:8123',
+  clientId: 'YOUR_SPOTIFY_CLIENT_ID',
+  clientSecret: 'YOUR_SPOTIFY_CLIENT_SECRET',
+  redirectUri: 'YOUR_REDIRECT_URI',
+  haUrl: '',
   haToken: '',
   haSpotifyEntity: 'media_player.spotifyplus_YOUR_USERNAME',
   homeSpeakers: [
@@ -59,8 +59,8 @@ function spotifyAuth() {
     show_dialog: 'false'
   });
 
-  // Direct redirect — simplest, most reliable
-  window.location.href = 'https://accounts.spotify.com/authorize?' + params;
+  // Use window.top to break out of HA iframe — Spotify blocks loading in iframes
+  (window.top || window).location.href = 'https://accounts.spotify.com/authorize?' + params;
 }
 
 async function handleAuthCallback(code) {
@@ -549,7 +549,7 @@ async function renderHome(container) {
   html += '<div class="track-list">';
   topTracks.forEach((t, i) => {
     const art = t.album?.images?.[t.album.images.length - 1]?.url || '';
-    html += trackRow(i + 1, t.name, t.artists?.[0]?.name, art, t.uri, t.album?.uri, '--orange');
+    html += trackRow(i + 1, t.name, t.artists?.[0]?.name, art, t.uri, null, '--orange');
   });
   html += '</div>';
   html += '<button class="view-all-btn" onclick="navigate(\'search\')">View All</button>';
@@ -562,7 +562,7 @@ async function renderHome(container) {
   recentTracks.forEach((item, i) => {
     const t = item.track;
     const art = t.album?.images?.[t.album.images.length - 1]?.url || '';
-    html += trackRow(i + 1, t.name, t.artists?.[0]?.name, art, t.uri, t.album?.uri, '--pink');
+    html += trackRow(i + 1, t.name, t.artists?.[0]?.name, art, t.uri, null, '--pink');
   });
   html += '</div>';
   html += '<button class="view-all-btn" onclick="navigate(\'playlists\')">View All</button>';
@@ -1396,6 +1396,20 @@ function showAuth() {
   document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('main').classList.add('hidden');
   document.getElementById('bottombar').classList.add('hidden');
+
+  // Auto-redirect to Spotify after a short delay — breaks out of HA iframe via window.top
+  const statusEl = document.getElementById('auth-status');
+  let countdown = 2;
+  const tick = setInterval(() => {
+    countdown--;
+    if (statusEl) statusEl.textContent = countdown > 0
+      ? `Connecting to Spotify in ${countdown}...`
+      : 'Redirecting...';
+    if (countdown <= 0) {
+      clearInterval(tick);
+      spotifyAuth();
+    }
+  }, 1000);
 }
 
 function showApp() {
@@ -1416,6 +1430,7 @@ function switchAccount() {
   state.tokenExpiry = 0;
 
   // Redirect to Spotify auth with force dialog so they can pick a different account
+  // Use window.top to break out of HA iframe
   const params = new URLSearchParams({
     client_id: CONFIG.clientId,
     response_type: 'code',
@@ -1423,7 +1438,7 @@ function switchAccount() {
     scope: CONFIG.scopes,
     show_dialog: 'true'
   });
-  window.location.href = 'https://accounts.spotify.com/authorize?' + params;
+  (window.top || window).location.href = 'https://accounts.spotify.com/authorize?' + params;
 }
 
 async function loadUserProfile() {
@@ -1480,7 +1495,7 @@ async function initApp() {
 
 // === BOOT ===
 // Hardcoded refresh token from SpotifyPlus — auto-refreshes, no browser auth needed
-const FALLBACK_REFRESH_TOKEN = 'AQDWcLY5JFVMZzSDc0RsJXSMMkFLF9iLq_rY2kXcBTZ5RQLTJ1dissPQQPo66NmT1txGSTG8uDZjJf3rXlrzok6tfB_AYc4bmcY7Lqxg0Fn9jxD7zolMHsWbFm1Bk20FtN0';
+const FALLBACK_REFRESH_TOKEN = '';
 
 (async function boot() {
   // Check for auth code callback (redirect from Spotify)

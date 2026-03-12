@@ -959,11 +959,119 @@ body {
 .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.08); border-top-color: var(--pink); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Responsive */
+/* Responsive — Tablet */
 @media (max-width: 900px) {
   body { grid-template-columns: 1fr; grid-template-areas: "topbar" "main" "bottombar"; }
   #sidebar { display: none; }
   .columns-grid { grid-template-columns: 1fr; }
+}
+
+/* Responsive — Mobile */
+@media (max-width: 768px) {
+  /* Topbar: collapse min-widths, hide marquee, shrink np-mini */
+  #topbar { padding: 0 10px; gap: 6px; }
+  .top-left { min-width: 0; }
+  .top-right { min-width: 0; flex-shrink: 0; }
+  .top-center { display: none; }
+  .np-track-mini { max-width: 110px; font-size: 11px; }
+  .np-artist-mini { max-width: 110px; }
+  .np-art-mini { width: 30px; height: 30px; }
+
+  /* Main: tighten padding */
+  #main { padding: 12px 10px; }
+
+  /* Now Playing full view */
+  .np-full {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 12px 8px;
+    justify-items: center;
+  }
+  .np-info-side { padding-top: 0; gap: 12px; width: 100%; }
+
+  /* Vinyl — scale down for phone */
+  .vinyl-container { width: 180px; height: 180px; }
+  .vinyl-disc { width: 180px; height: 180px; }
+  .vinyl-label { width: 62px; height: 62px; }
+  .vinyl-platter { inset: -3px; }
+
+  /* Turntable body: keep it contained, no overflow */
+  .turntable-body {
+    top: -18px; left: -28px;
+    width: 236px; height: 218px;
+    border-radius: 10px;
+  }
+  .turntable-speed { bottom: 8px; right: 10px; }
+
+  /* Tonearm: scale down to match smaller disc */
+  .tonearm { width: 140px; height: 32px; transform-origin: 120px 16px; }
+  .tonearm::before { left: 16px; top: 14px; width: 90px; }
+
+  /* Hide turntable body on mobile — it bleeds outside container bounds */
+  .turntable-body { display: none; }
+  .turntable-speed { display: none; }
+  .turntable-led { display: none; }
+
+  /* Push title clear of vinyl */
+  .np-vinyl-side { margin-bottom: 16px; }
+
+  /* Transport controls */
+  .transport-controls { gap: 10px; }
+  .transport-btn { width: 36px; height: 36px; }
+  .transport-btn-play { width: 54px; height: 54px; }
+  .transport-btn-play svg { width: 22px; height: 22px; }
+
+  /* Track / playlist lists */
+  .track-art { width: 30px; height: 30px; }
+  .track-num { font-size: 12px; width: 20px; }
+
+  /* Card grids: 3 compact columns on mobile */
+  .card-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: start; }
+  .card-item { padding: 6px; display: flex; flex-direction: column; }
+  .card-art { width: 100%; height: 90px; max-height: 90px; min-height: 90px; object-fit: cover; border-radius: 6px; margin-bottom: 5px; }
+  .card-name { font-size: 10px; margin-bottom: 2px; }
+  .card-desc { font-size: 9px; }
+
+  /* Genre grid: 2 columns */
+  .genre-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .genre-card { height: 80px; font-size: 12px; padding: 8px; }
+
+  /* Search */
+  .search-input { font-size: 13px; }
+
+  /* Section headers */
+  .section-title { font-size: 14px; }
+
+  /* Modal */
+  .modal { min-width: 0; width: calc(100vw - 32px); padding: 16px; }
+
+  /* Auth screen */
+  .auth-title { font-size: 30px; letter-spacing: 6px; }
+  .auth-btn { padding: 12px 28px; font-size: 13px; }
+
+  /* Bottom bar — fixed to viewport bottom, always visible */
+  #bottombar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: auto;
+    min-height: 60px;
+    z-index: 200;
+  }
+  .bottom-btn { padding: 8px 2px; margin: 2px 1px; }
+  .bottom-btn svg { width: 22px; height: 22px; }
+  .bottom-btn span { font-size: 8px; }
+
+  /* Push main content up so it's not hidden behind fixed bottombar */
+  #main { padding-bottom: 80px; }
+
+  /* Lyrics box — tighten */
+  .lyrics-box { max-height: 260px; }
+
+  /* Progress bar — easier to tap */
+  .progress-bar { height: 6px; }
+  .progress-fill { height: 6px; }
 }
 
 .hidden { display: none !important; }
@@ -973,7 +1081,9 @@ body {
 
 <div id="auth-screen">
   <div class="auth-title">♪ JUKEBOX ♪</div>
+  <div id="auth-status" style="color:var(--cyan);font-family:monospace;font-size:13px;margin-bottom:16px;letter-spacing:1px;">Connecting to Spotify...</div>
   <button class="auth-btn" onclick="spotifyAuth()">Connect Spotify</button>
+  <div style="color:var(--text-dim,#666);font-size:11px;margin-top:12px;">Taking too long? Tap the button above.</div>
 </div>
 
 <div id="topbar" class="hidden">

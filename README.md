@@ -26,7 +26,7 @@
 - **🔊 Smart Speaker Selection** — Switch between Spotify Connect devices, or connect Home Assistant to unlock Cast & Sonos speakers
 - **🏠 Home Assistant Integration** — Optional HA connection stores settings in localStorage; transfers playback via `media_player.play_media` (works for sleeping Cast/Sonos devices)
 - **👥 Multi-User** — Switch Spotify accounts with one click
-- **🕹️ Cyberpunk Aesthetic** — Neon pink/cyan/purple theme, bokeh background, animated marquee, neon sidebar
+- **🕹️ Neon Aesthetic** — Neon pink/cyan/purple theme, bokeh background, animated marquee, neon sidebar
 - **📱 Responsive** — Works on desktop, tablet, and mobile
 
 ## 🚀 Setup
