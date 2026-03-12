@@ -1,0 +1,104 @@
+# 🎵 Jukebox — Cyberpunk Spotify Web Player
+
+A retro-futuristic, cyberpunk-styled Spotify web player designed to run inside Home Assistant as a dashboard — or standalone in any browser.
+
+![Jukebox](https://img.shields.io/badge/Spotify-Jukebox-ff2d95?style=for-the-badge&logo=spotify)
+
+## ✨ Features
+
+- **🎵 Full Spotify Playback** — Play, pause, skip, shuffle, repeat, volume, seek
+- **💿 Vinyl Record Player** — Realistic spinning vinyl with grooves, tonearm, LED ring, turntable chassis
+- **🎤 Live Synced Lyrics** — Karaoke-style lyrics from [lrclib.net](https://lrclib.net), click any line to seek
+- **🔍 Search** — Find songs, artists, albums, playlists
+- **📋 Browse** — Your playlists, top artists, new releases, genres
+- **🔊 Speaker Selection** — Switch between Spotify Connect devices
+- **👥 Multi-User** — Switch Spotify accounts with one click
+- **🕹️ Cyberpunk Aesthetic** — Neon pink/cyan/purple theme, bokeh background, animated marquee, neon sidebar
+- **📱 Responsive** — Works on desktop, tablet, and mobile
+
+## 🚀 Setup
+
+### 1. Create a Spotify App
+
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Create a new app
+3. Add your redirect URI (e.g., `http://your-ha-ip:8123/local/jukebox/index.html`)
+4. Note your **Client ID** and **Client Secret**
+
+### 2. Configure
+
+Edit `app.js` and replace the placeholders:
+
+```javascript
+const CONFIG = {
+  clientId: 'YOUR_SPOTIFY_CLIENT_ID',
+  clientSecret: 'YOUR_SPOTIFY_CLIENT_SECRET',
+  redirectUri: 'YOUR_REDIRECT_URI',
+  ...
+};
+```
+
+Optionally, set a `FALLBACK_REFRESH_TOKEN` (near the bottom of `app.js`) to skip the login screen. You can get this from an existing SpotifyPlus integration in Home Assistant, or by completing the auth flow once and checking `localStorage`.
+
+### 3. Build
+
+The app is two files: `index.html` (template with CSS) and `app.js` (all logic). To create a single combined file:
+
+```bash
+python3 -c "
+with open('index.html') as f: html = f.read()
+with open('app.js') as f: js = f.read()
+print(html.replace('%%APP_JS%%', js))
+" > combined.html
+```
+
+### 4. Deploy to Home Assistant
+
+```bash
+# Copy to HA's www directory
+cp combined.html /path/to/homeassistant/www/jukebox/index.html
+
+# Add a dashboard in HA (Settings → Dashboards → Add Dashboard)
+# Or add to configuration.yaml:
+panel_iframe:
+  jukebox:
+    title: "Jukebox"
+    url: "/local/jukebox/index.html"
+    icon: "mdi:music-box"
+    require_admin: false
+```
+
+### 5. Standalone Use
+
+Just open `combined.html` in any browser. No server required — it's a pure client-side app.
+
+## 🎨 Screenshots
+
+### Home View
+Three-column layout with your top tracks, recently played, and top artists.
+
+### Now Playing — Vinyl View
+Spinning vinyl record with album art, tonearm animation, LED ring, synced lyrics with karaoke highlighting.
+
+### Search
+Full search across songs, artists, albums, and playlists.
+
+### Genres
+Browse by genre with Spotify category images.
+
+## 🏗️ Architecture
+
+- **Pure HTML/CSS/JS** — No frameworks, no build tools, no dependencies
+- **Spotify Web API** — Authorization Code flow with client secret
+- **lrclib.net** — Free lyrics API (synced + plain text)
+- **Single file deploy** — Template + JS combined into one HTML file
+
+## 📄 License
+
+MIT — Do whatever you want with it.
+
+## 🙏 Credits
+
+- Built with [Spotify Web API](https://developer.spotify.com/documentation/web-api)
+- Lyrics from [lrclib.net](https://lrclib.net)
+- Designed for [Home Assistant](https://www.home-assistant.io/)
