@@ -7,6 +7,8 @@ A retro-futuristic, cyberpunk-styled Spotify web player designed to run inside H
 ![JavaScript](https://img.shields.io/badge/Pure-JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-ff2d95?style=for-the-badge)
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-%E2%98%95-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://paypal.me/theboss3dfactory/)
+
 ## ✨ Features
 
 - **🎵 Full Spotify Playback** — Play, pause, skip, shuffle, repeat, volume, seek
@@ -105,3 +107,11 @@ Browse by genre with Spotify category images.
 - Built with [Spotify Web API](https://developer.spotify.com/documentation/web-api)
 - Lyrics from [lrclib.net](https://lrclib.net)
 - Designed for [Home Assistant](https://www.home-assistant.io/)
+---
+
+## ☕ Support
+
+If this project is useful to you, consider buying me a coffee!
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-%E2%98%95-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://paypal.me/theboss3dfactory/)
+
