@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="64" viewBox="0 0 720 64">
+  <defs>
+    <filter id="gy" x="-10%" y="-30%" width="120%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 1
+                0 0.9 0 0 0.85
+                0 0 0 0 0
+                0 0 0 0.6 0"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="64" fill="#04040c" rx="4"/>
+
+  <!-- Outer box - yellow glow -->
+  <rect x="6" y="6" width="708" height="52" rx="3"
+    fill="none" stroke="#ffe600" stroke-width="1.5" opacity="0.9" filter="url(#gy)"/>
+  <!-- Outer box - crisp -->
+  <rect x="6" y="6" width="708" height="52" rx="3"
+    fill="none" stroke="#ffe600" stroke-width="1" opacity="0.85"/>
+
+  <!-- Inner box -->
+  <rect x="12" y="12" width="696" height="40" rx="2"
+    fill="none" stroke="#ffe600" stroke-width="0.6" opacity="0.4"/>
+
+  <!-- Corner diamonds -->
+  <text x="22" y="38" font-family="monospace" font-size="14" fill="#ffe600" opacity="0.7">◆</text>
+  <text x="686" y="38" font-family="monospace" font-size="14" fill="#ffe600" opacity="0.7">◆</text>
+
+  <!-- Glow layer -->
+  <text x="360" y="39" text-anchor="middle"
+    font-family="Courier New, monospace" font-size="15" letter-spacing="5" font-weight="bold"
+    fill="#ffe600" filter="url(#gy)">░░  INSERT COIN  ·  SELECT YOUR JAM  ·  PRESS PLAY  ░░</text>
+
+  <!-- Crisp text -->
+  <text x="360" y="39" text-anchor="middle"
+    font-family="Courier New, monospace" font-size="15" letter-spacing="5" font-weight="bold"
+    fill="#ffe600" opacity="0.95">░░  INSERT COIN  ·  SELECT YOUR JAM  ·  PRESS PLAY  ░░</text>
+</svg>
