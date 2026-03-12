@@ -95,7 +95,7 @@ Browse by genre with Spotify category images.
 
 ## 📄 License
 
-MIT — Do whatever you want with it.
+**All Rights Reserved** — You can view the code and use it for your own personal setup, but you cannot copy, redistribute, sell, or claim it as your own. See [LICENSE](LICENSE) for details.
 
 ## 🙏 Credits
 
