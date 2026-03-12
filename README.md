@@ -1,15 +1,14 @@
-<!-- HEADER -->
 <div align="center">
 
-![Header](https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,25&height=220&section=header&text=%F0%9F%8E%B5%20JUKEBOX&fontSize=72&fontColor=ff2d95&animation=twinkling&fontAlignY=38&desc=Cyberpunk%20Spotify%20Web%20Player&descSize=22&descAlignY=58&descColor=00f0ff)
+<img src="assets/header.svg" alt="JUKEBOX" width="100%"/>
+
+<br/>
 
 ```
   ╔══════════════════════════════════════════════════════╗
-  ║  ░░░  INSERT COIN  ·  SELECT YOUR JAM  ·  PRESS PLAY  ░░░  ║
+  ║    ░░  INSERT COIN  ·  SELECT YOUR JAM  ·  PRESS PLAY  ░░    ║
   ╚══════════════════════════════════════════════════════╝
 ```
-
-*A retro-futuristic, cyberpunk-styled Spotify web player — runs inside Home Assistant or standalone in any browser.*
 
 ![Spotify](https://img.shields.io/badge/Spotify-Jukebox-1DB954?style=for-the-badge&logo=spotify&logoColor=white)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Ready-41BDF5?style=for-the-badge&logo=homeassistant&logoColor=white)
@@ -19,10 +18,7 @@
 
 </div>
 
-<!-- DIVIDER -->
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=12,20,25&height=3&width=600" />
-</p>
+<br/>
 
 ## ✨ Features
 
@@ -122,6 +118,7 @@ Browse by genre with Spotify category images.
 - Built with [Spotify Web API](https://developer.spotify.com/documentation/web-api)
 - Lyrics from [lrclib.net](https://lrclib.net)
 - Designed for [Home Assistant](https://www.home-assistant.io/)
+
 ---
 
 <div align="center">
@@ -132,9 +129,4 @@ If you enjoy this project, a coffee keeps the neon lights on!
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-%E2%98%95-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://paypal.me/theboss3dfactory/)
 
-</div>
-
-<!-- FOOTER -->
-<div align="center">
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,25&height=100&section=footer" />
 </div>
