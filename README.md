@@ -4,11 +4,7 @@
 
 <br/>
 
-```
-  ╔══════════════════════════════════════════════════════╗
-  ║    ░░  INSERT COIN  ·  SELECT YOUR JAM  ·  PRESS PLAY  ░░    ║
-  ╚══════════════════════════════════════════════════════╝
-```
+<img src="assets/marquee.svg" alt="INSERT COIN · SELECT YOUR JAM · PRESS PLAY" width="720"/>
 
 ![Spotify](https://img.shields.io/badge/Spotify-Jukebox-1DB954?style=for-the-badge&logo=spotify&logoColor=white)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Ready-41BDF5?style=for-the-badge&logo=homeassistant&logoColor=white)
