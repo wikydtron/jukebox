@@ -184,11 +184,12 @@ async function play(uri, context_uri = null, offset = null) {
   setTimeout(pollNowPlaying, 500);
 }
 
-async function executePendingPlay() {
+async function executePendingPlay(deviceId) {
   if (!state.pendingPlay) return;
   const { uri, context_uri, offset } = state.pendingPlay;
   state.pendingPlay = null;
   const body = {};
+  if (deviceId) body.device_id = deviceId;
   if (context_uri) {
     body.context_uri = context_uri;
     if (offset !== null) body.offset = { position: offset };
@@ -354,55 +355,80 @@ async function selectHaSpeaker(label, entityId) {
   const spkEl = document.getElementById('speaker-name');
   if (spkEl) spkEl.textContent = label;
 
-  // Determine what to play
-  const pending = state.pendingPlay;
-  const nowPlaying = state.nowPlaying;
-  let mediaContentId = null;
-  let mediaContentType = 'music';
-
-  if (pending?.uri) {
-    mediaContentId = pending.uri;
-  } else if (pending?.context_uri) {
-    mediaContentId = pending.context_uri;
-    mediaContentType = pending.context_uri.includes(':playlist:') ? 'playlist' : 'music';
-  } else if (nowPlaying?.item?.uri) {
-    mediaContentId = nowPlaying.item.uri;
-  } else if (nowPlaying?.context?.uri) {
-    mediaContentId = nowPlaying.context.uri;
-    mediaContentType = nowPlaying.context.type || 'music';
-  }
-
-  if (!mediaContentId) {
-    // Nothing playing — just transfer focus without media
-    console.log('No media to transfer, speaker set to', label);
-    return;
-  }
-
-  state.pendingPlay = null;
-  state.activeDevice = { name: label, id: entityId };
-
+  // Step 1: Fetch Spotify devices and try to match by name
+  let spotifyDeviceId = null;
   try {
-    const res = await fetch(`${cfg.url}/api/services/media_player/play_media`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${cfg.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        entity_id: entityId,
-        media_content_id: mediaContentId,
-        media_content_type: mediaContentType
-      })
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      console.error('HA play_media error:', res.status, err);
+    const devData = await api('/me/player/devices');
+    const devices = devData?.devices || [];
+    // Match by name (case-insensitive, partial match)
+    const match = devices.find(d =>
+      d.name.toLowerCase().includes(label.toLowerCase()) ||
+      label.toLowerCase().includes(d.name.toLowerCase().split(' ')[0])
+    );
+    if (match) {
+      spotifyDeviceId = match.id;
+      console.log(`Matched Spotify device: "${match.name}" for speaker "${label}"`);
+    } else {
+      console.log('Available Spotify devices:', devices.map(d => d.name));
+    }
+  } catch (e) {
+    console.error('Could not fetch Spotify devices:', e);
+  }
+
+  // Step 2a: If Spotify device found, transfer via Spotify API (most reliable)
+  if (spotifyDeviceId) {
+    state.pendingPlay = state.pendingPlay; // keep pending
+    state.activeDevice = { name: label, id: spotifyDeviceId };
+    if (state.pendingPlay) {
+      await executePendingPlay(spotifyDeviceId);
+    } else {
+      await api('/me/player', 'PUT', { device_ids: [spotifyDeviceId], play: true });
     }
     await new Promise(r => setTimeout(r, 1500));
     await pollNowPlaying();
-  } catch (e) {
-    console.error('HA play_media error:', e);
+    return;
   }
+
+  // Step 2b: Spotify device not found (speaker may be off) — try waking via HA, then retry
+  const cfg2 = getHaConfig();
+  if (cfg2.url && cfg2.token) {
+    console.log('Spotify device not found, waking via HA media_player.turn_on...');
+    try {
+      await fetch(`${cfg2.url}/api/services/media_player/turn_on`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cfg2.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_id: entityId })
+      });
+      // Wait for device to register with Spotify Connect
+      await new Promise(r => setTimeout(r, 4000));
+
+      // Retry device lookup
+      const devData2 = await api('/me/player/devices');
+      const devices2 = devData2?.devices || [];
+      const match2 = devices2.find(d =>
+        d.name.toLowerCase().includes(label.toLowerCase()) ||
+        label.toLowerCase().includes(d.name.toLowerCase().split(' ')[0])
+      );
+      if (match2) {
+        spotifyDeviceId = match2.id;
+        state.activeDevice = { name: label, id: spotifyDeviceId };
+        if (state.pendingPlay) {
+          await executePendingPlay(spotifyDeviceId);
+        } else {
+          await api('/me/player', 'PUT', { device_ids: [spotifyDeviceId], play: true });
+        }
+        await new Promise(r => setTimeout(r, 1500));
+        await pollNowPlaying();
+        return;
+      }
+    } catch (e) {
+      console.error('HA wake error:', e);
+    }
+  }
+
+  console.warn('Could not find or wake Spotify device for', label);
+  if (spkEl) spkEl.textContent = label + ' (offline)';
+  state.pendingPlay = null;
 }
 
 function closeHaSpeakers() {
