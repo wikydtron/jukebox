@@ -4,19 +4,36 @@ This folder has everything you need. One file, a few text edits, and you're done
 
 ---
 
-## ⚠️ Important — HTTPS Required
+## ⚠️ Important — HTTPS & The Refresh Token Trick
 
-The Spotify Web Playback SDK **requires a secure connection (HTTPS)** to work. This is a Spotify/browser security requirement, not something we can work around.
+Spotify's auth flow normally requires HTTPS to complete. But there's a workaround that lets you skip the whole HTTPS requirement for day-to-day use: **hardcoding your refresh token**.
 
-**Your Home Assistant must be accessible via `https://`** — not `http://`.
+Once you have a refresh token in the file, the app never needs to do the OAuth redirect again — it just silently refreshes your access token on load. No HTTPS needed after that.
 
-Common ways to set this up:
-- **Nabu Casa** (Home Assistant Cloud) — easiest, HTTPS built-in
-- **NGINX Proxy Manager** or **Caddy** with a free Let's Encrypt certificate
-- **Cloudflare Tunnel** — free, no port forwarding required
-- **DuckDNS + Let's Encrypt** — free with a bit of setup
+**How to get your refresh token — pick one:**
 
-If you access HA at `http://192.168.x.x:8123`, playback will likely fail silently. Get HTTPS sorted first, then come back to this guide.
+### Option A — You have SpotifyPlus installed in Home Assistant
+1. On your HA machine, open this file:
+   `/config/.storage/core.config_entries`
+2. Search for `spotifyplus` and find the `refresh_token` field
+3. Copy that value
+
+### Option B — Complete auth once, grab token from browser
+1. Open the jukebox `index.html` directly in Chrome/Edge (not through HA) — e.g. `http://192.168.1.100:8123/local/jukebox/index.html`
+2. Log in with Spotify when prompted
+3. After login, press **F12** → go to **Application** tab → **Local Storage** → your HA URL
+4. Find the key `jukebox_refresh` and copy its value
+
+### Once you have the token
+In your `index.html`, find this line (near the bottom):
+```
+const FALLBACK_REFRESH_TOKEN = '';
+```
+Replace the empty quotes with your token:
+```
+const FALLBACK_REFRESH_TOKEN = 'paste_your_token_here';
+```
+Save the file. Now it works over plain HTTP — no HTTPS setup required.
 
 ---
 
@@ -55,6 +72,7 @@ If you access HA at `http://192.168.x.x:8123`, playback will likely fail silentl
 | `YOUR_SPOTIFY_CLIENT_ID` | Your Client ID from Step 1 |
 | `YOUR_SPOTIFY_CLIENT_SECRET` | Your Client Secret from Step 1 |
 | `YOUR_REDIRECT_URI` | `http://YOUR-HA-IP:8123/local/jukebox/index.html` |
+| `FALLBACK_REFRESH_TOKEN = ''` | `FALLBACK_REFRESH_TOKEN = 'your_token'` *(optional but recommended — see the HTTPS section above)* |
 
 4. Save the file
 
@@ -103,8 +121,8 @@ Done! 🎉
 **Blank screen / nothing loads**
 → Make sure the file is at `/config/www/jukebox/index.html` and not in a subfolder.
 
-**Playback doesn't start / silent failure**
-→ You're likely on HTTP. The Spotify Web Playback SDK requires HTTPS. Set up a reverse proxy (NGINX Proxy Manager, Caddy, or Cloudflare Tunnel) and access HA via `https://` before trying again.
+**Stuck on the redirect screen / auth doesn't complete**
+→ Spotify's auth flow doesn't work inside the HA iframe over HTTP. Use the **refresh token trick** from the HTTPS section above — complete auth once by opening the file directly in your browser, grab the token from localStorage (F12 → Application → Local Storage → `jukebox_refresh`), paste it into the file as `FALLBACK_REFRESH_TOKEN`, and you're done.
 
 **"Premium required"**
 → Spotify playback in the browser requires a Spotify Premium subscription.
