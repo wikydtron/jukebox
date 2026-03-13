@@ -63,8 +63,15 @@ Save the file. Now it works over plain HTTP — no HTTPS setup required.
 
 ## Step 2 — Edit the File (2 minutes)
 
-1. Open `index.html` (from this folder) in **Notepad** (right-click → Open with → Notepad)
-2. Press **Ctrl+H** to open Find & Replace
+**Open `index.html` in a text editor:**
+- 🪟 **Windows** — Right-click `index.html` → Open with → **Notepad**
+- 🍎 **Mac** — Right-click → Open With → **TextEdit** *(make sure TextEdit is in plain text mode: Format → Make Plain Text)*
+- 🐧 **Linux** — Open with **gedit**, **Kate**, or any text editor
+
+**Then use Find & Replace:**
+- Windows/Linux: **Ctrl+H**
+- Mac: **Cmd+H** (or Edit → Find → Find and Replace)
+
 3. Replace these three things:
 
 | Find | Replace with |
@@ -86,17 +93,47 @@ Copy `index.html` into this folder on your Home Assistant server:
 /config/www/jukebox/index.html
 ```
 
-**Via Samba/network share:**
-> `\\YOUR-HA-IP\config\www\jukebox\` (create the `jukebox` folder if it doesn't exist)
+Create the `jukebox` folder if it doesn't exist yet.
 
-**Via File Editor (HA add-on)** or **Filebrowser:**
-> Upload to `/config/www/jukebox/`
+---
 
-**Via SSH:**
+### 🪟 Windows
+
+1. Open **File Explorer** and type this in the address bar (replace with your HA IP):
+   ```
+   \\192.168.1.100\config\www
+   ```
+2. If it asks for a username/password, try `homeassistant` / no password, or check your HA Samba add-on settings
+3. Create a folder called `jukebox` inside `www`
+4. Copy `index.html` into it
+
+> **Don't see a `www` folder?** Create it too — HA won't show it until something is in it.
+
+---
+
+### 🍎 Mac
+
+1. In **Finder**, press **Cmd+K** and enter:
+   ```
+   smb://192.168.1.100/config
+   ```
+2. Navigate to `www`, create a `jukebox` folder, and drop `index.html` in
+3. If prompted for credentials, use your HA Samba add-on username/password
+
+---
+
+### 🐧 Linux / SSH
+
 ```bash
 mkdir -p /config/www/jukebox
 cp index.html /config/www/jukebox/index.html
 ```
+
+---
+
+### Via HA File Editor or Filebrowser add-on
+
+Open the add-on, navigate to `/config/www/`, create a `jukebox` folder, and upload `index.html`.
 
 ---
 

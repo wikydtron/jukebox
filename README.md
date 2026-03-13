@@ -125,6 +125,59 @@ Settings are stored in **browser localStorage** — nothing is saved in the code
 
 Just open `combined.html` in any browser. No server required — it's a pure client-side app.
 
+## 🛠️ Troubleshooting
+
+### Stuck on the redirect screen / auth doesn't complete inside HA
+
+Spotify's OAuth flow can't run inside an HA iframe. The fix is to hardcode your **refresh token** so the app never needs to do the auth redirect again.
+
+**Step 1 — Get your token**
+
+Open the jukebox URL directly in your browser (not through HA):
+```
+http://your-ha-ip:8123/local/jukebox/index.html
+```
+Log in with Spotify. Once it loads, press **F12** → **Application** tab → **Local Storage** → select your HA URL → find the key `jukebox_refresh` and copy its value.
+
+> Already have SpotifyPlus? Your token is in `/config/.storage/core.config_entries` — search for `refresh_token` under the spotifyplus entry.
+
+**Step 2 — Paste it into the file**
+
+In `app.js`, find this line near the bottom:
+```javascript
+const FALLBACK_REFRESH_TOKEN = '';
+```
+Replace the empty quotes with your token. Rebuild and redeploy. Done — works on plain HTTP, no HTTPS required.
+
+---
+
+### Python UnicodeDecodeError on Windows
+
+Add `encoding='utf-8'` to all `open()` calls in the build script:
+
+```bash
+python3 -c "
+with open('template.html', encoding='utf-8') as f: html = f.read()
+with open('app.js', encoding='utf-8') as f: js = f.read()
+out = html.replace('</body>', '<script>' + js + '</script></body>')
+open('index.html', 'w', encoding='utf-8').write(out)
+"
+```
+
+---
+
+### Playback doesn't start / silent failure
+
+If you're on plain HTTP and haven't set a `FALLBACK_REFRESH_TOKEN`, the Web Playback SDK may fail silently. Use the refresh token fix above.
+
+---
+
+### "INVALID_CLIENT: Invalid redirect URI"
+
+The redirect URI in your Spotify Developer app must **exactly** match `CONFIG.redirectUri` in `app.js` — same IP, same port, same path, no trailing slash.
+
+---
+
 ## 🎨 Screenshots
 
 ### Home View
