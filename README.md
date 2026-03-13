@@ -115,14 +115,22 @@ Just open `combined.html` in any browser. No server required — it's a pure cli
 ### Home View
 Three-column layout with your top tracks, recently played, and top artists.
 
+![Home](screenshots/home.png)
+
 ### Now Playing — Vinyl View
 Spinning vinyl record with album art, tonearm animation, LED ring, synced lyrics with karaoke highlighting.
+
+![Now Playing](screenshots/now-playing.png)
 
 ### Search
 Full search across songs, artists, albums, and playlists.
 
-### Genres
-Browse by genre with Spotify category images.
+![Search](screenshots/search.png)
+
+### Top Artists
+Browse your most-played artists with genre tags.
+
+![Top Artists](screenshots/artists.png)
 
 ## 🏗️ Architecture
 
