@@ -4,10 +4,26 @@ This folder has everything you need. One file, a few text edits, and you're done
 
 ---
 
+## ⚠️ Important — HTTPS Required
+
+The Spotify Web Playback SDK **requires a secure connection (HTTPS)** to work. This is a Spotify/browser security requirement, not something we can work around.
+
+**Your Home Assistant must be accessible via `https://`** — not `http://`.
+
+Common ways to set this up:
+- **Nabu Casa** (Home Assistant Cloud) — easiest, HTTPS built-in
+- **NGINX Proxy Manager** or **Caddy** with a free Let's Encrypt certificate
+- **Cloudflare Tunnel** — free, no port forwarding required
+- **DuckDNS + Let's Encrypt** — free with a bit of setup
+
+If you access HA at `http://192.168.x.x:8123`, playback will likely fail silently. Get HTTPS sorted first, then come back to this guide.
+
+---
+
 ## What You Need
 
 - A **Spotify account** (free or premium — playback requires Premium)
-- **Home Assistant** already running
+- **Home Assistant** accessible via **HTTPS**
 - A text editor (**Notepad** on Windows, **TextEdit** on Mac)
 
 ---
@@ -86,6 +102,9 @@ Done! 🎉
 
 **Blank screen / nothing loads**
 → Make sure the file is at `/config/www/jukebox/index.html` and not in a subfolder.
+
+**Playback doesn't start / silent failure**
+→ You're likely on HTTP. The Spotify Web Playback SDK requires HTTPS. Set up a reverse proxy (NGINX Proxy Manager, Caddy, or Cloudflare Tunnel) and access HA via `https://` before trying again.
 
 **"Premium required"**
 → Spotify playback in the browser requires a Spotify Premium subscription.
