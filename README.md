@@ -176,6 +176,8 @@ If you're on plain HTTP and haven't set a `FALLBACK_REFRESH_TOKEN`, the Web Play
 
 The redirect URI in your Spotify Developer app must **exactly** match `CONFIG.redirectUri` in `app.js` — same IP, same port, same path, no trailing slash.
 
+If the URI looks correct but you're still getting this error: **clear your browser cache and cookies**, then try the auth flow again from scratch. Stale cached auth data is often the actual culprit.
+
 ---
 
 ## 🎨 Screenshots

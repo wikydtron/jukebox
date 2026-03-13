@@ -161,6 +161,9 @@ Done! 🎉
 **Stuck on the redirect screen / auth doesn't complete**
 → Spotify's auth flow doesn't work inside the HA iframe over HTTP. Use the **refresh token trick** from the HTTPS section above — complete auth once by opening the file directly in your browser, grab the token from localStorage (F12 → Application → Local Storage → `jukebox_refresh`), paste it into the file as `FALLBACK_REFRESH_TOKEN`, and you're done.
 
+**"INVALID_CLIENT: Invalid redirect URI"**
+→ Double-check that the redirect URI in your Spotify app *exactly* matches what you put in the file (same IP, same port, same path). If it looks right but still fails — **clear your browser cache and cookies** and try again from scratch. Stale cached auth data is usually the real cause.
+
 **"Premium required"**
 → Spotify playback in the browser requires a Spotify Premium subscription.
 
