@@ -29,7 +29,22 @@
 - **🕹️ Neon Aesthetic** — Neon pink/cyan/purple theme, bokeh background, animated marquee, neon sidebar
 - **📱 Responsive** — Works on desktop, tablet, and mobile
 
-## 🚀 Setup
+## 🟢 Never Written Code Before?
+
+No problem. The [`easy-install/`](easy-install/) folder has a **pre-built file** and a plain-English guide.
+
+You'll need:
+- A Spotify account (Premium required for playback)
+- Home Assistant running on your network
+- Notepad (or any text editor)
+
+**[👉 Go to easy-install/INSTALL.md](easy-install/INSTALL.md)**
+
+Three steps: create a Spotify app, fill in 3 values in the file, drop it in HA. That's it.
+
+---
+
+## 🚀 Setup (Developer Install)
 
 ### 1. Create a Spotify App
 
