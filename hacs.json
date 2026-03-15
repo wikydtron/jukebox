@@ -1,0 +1,7 @@
+{
+  "name": "Jukebox",
+  "content_in_root": true,
+  "render_readme": true,
+  "filename": "jukebox-panel.js",
+  "homeassistant": "2023.0.0"
+}
